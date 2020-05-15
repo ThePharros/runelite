@@ -53,6 +53,16 @@ public interface ItemStatConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "maxHit",
+		name = "Show Max Hit",
+		description = "Shows max hit in equipment tooltips"
+	)
+	default boolean maxHit()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "geStats",
 		name = "Enable GE item information",
 		description = "Shows an item information panel when buying items in the GE"
@@ -175,5 +185,16 @@ public interface ItemStatConfig extends Config
 	default Color colorWorse()
 	{
 		return new Color(0xEE3333);
+	}
+
+	@ConfigItem(
+		keyName = "colorMaxHit",
+		name = "Max Hit",
+		description = "Color to show for max hit stat",
+		position = 15
+	)
+	default Color colorMaxHit()
+	{
+		return new Color(0x00FFFF);
 	}
 }

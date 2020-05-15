@@ -34,9 +34,12 @@ import java.awt.FontMetrics;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Constants;
 import net.runelite.api.FontID;
+import net.runelite.api.GameState;
 import net.runelite.api.InventoryID;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.ItemID;
@@ -59,6 +62,9 @@ import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import static net.runelite.client.plugins.itemstats.ItemStatAttackStyle.BLOCK;
+import static net.runelite.client.plugins.itemstats.ItemStatAttackStyle.CASTING;
+import static net.runelite.client.plugins.itemstats.ItemStatAttackStyle.DEFENSIVE_CASTING;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.JagexColors;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -71,11 +77,16 @@ import net.runelite.http.api.item.ItemStats;
 	description = "Show information about food and potion effects",
 	tags = {"food", "inventory", "overlay", "potion"}
 )
+@Slf4j
 public class ItemStatPlugin extends Plugin
 {
 	private static final int ORANGE_TEXT = JagexColors.DARK_ORANGE_INTERFACE_TEXT.getRGB();
 	private static final int YELLOW_TEXT = JagexColors.YELLOW_INTERFACE_TEXT.getRGB();
 	private static final int TEXT_HEIGHT = 11;
+
+	private int attackStyleVarbit = -1;
+	private int equippedWeaponTypeVarbit = -1;
+	private int castingModeVarbit = -1;
 
 	@Inject
 	private OverlayManager overlayManager;
@@ -95,6 +106,9 @@ public class ItemStatPlugin extends Plugin
 	@Inject
 	private ClientThread clientThread;
 
+	@Getter
+	private ItemStatAttackStyle attackStyle;
+
 	private Widget itemInformationTitle;
 
 	@Provides
@@ -113,6 +127,22 @@ public class ItemStatPlugin extends Plugin
 	protected void startUp() throws Exception
 	{
 		overlayManager.add(overlay);
+
+		if (client.getGameState() == GameState.LOGGED_IN)
+		{
+			clientThread.invoke(this::start);
+		}
+	}
+
+	private void start()
+	{
+		attackStyleVarbit = client.getVar(VarPlayer.ATTACK_STYLE);
+		equippedWeaponTypeVarbit = client.getVar(Varbits.EQUIPPED_WEAPON_TYPE);
+		castingModeVarbit = client.getVar(Varbits.DEFENSIVE_CASTING_MODE);
+		updateAttackStyle(
+			equippedWeaponTypeVarbit,
+			attackStyleVarbit,
+			castingModeVarbit);
 	}
 
 	@Override
@@ -149,6 +179,20 @@ public class ItemStatPlugin extends Plugin
 		{
 			resetGEInventory();
 		}
+
+		int currentAttackStyleVarbit = client.getVar(VarPlayer.ATTACK_STYLE);
+		int currentEquippedWeaponTypeVarbit = client.getVar(Varbits.EQUIPPED_WEAPON_TYPE);
+		int currentCastingModeVarbit = client.getVar(Varbits.DEFENSIVE_CASTING_MODE);
+
+		if (attackStyleVarbit != currentAttackStyleVarbit || equippedWeaponTypeVarbit != currentEquippedWeaponTypeVarbit || castingModeVarbit != currentCastingModeVarbit)
+		{
+			attackStyleVarbit = currentAttackStyleVarbit;
+			equippedWeaponTypeVarbit = currentEquippedWeaponTypeVarbit;
+			castingModeVarbit = currentCastingModeVarbit;
+
+			updateAttackStyle(equippedWeaponTypeVarbit, attackStyleVarbit,
+				castingModeVarbit);
+		}
 	}
 
 	@Subscribe
@@ -160,6 +204,24 @@ public class ItemStatPlugin extends Plugin
 			if (currentGeItem != -1 && client.getVar(Varbits.GE_OFFER_CREATION_TYPE) == 0)
 			{
 				createItemInformation(currentGeItem);
+			}
+		}
+	}
+
+	private void updateAttackStyle(int equippedWeaponType, int attackStyleIndex, int castingMode)
+	{
+		log.info("STYLE: " + ItemStatWeaponType.getWeaponType(equippedWeaponType));
+		ItemStatAttackStyle[] attackStyles = ItemStatWeaponType.getWeaponType(equippedWeaponType).getAttackStyles();
+		if (attackStyleIndex < attackStyles.length)
+		{
+			attackStyle = attackStyles[attackStyleIndex];
+			if (attackStyle == null)
+			{
+				attackStyle = BLOCK;
+			}
+			else if ((attackStyle == CASTING) && (castingMode == 1))
+			{
+				attackStyle = DEFENSIVE_CASTING;
 			}
 		}
 	}

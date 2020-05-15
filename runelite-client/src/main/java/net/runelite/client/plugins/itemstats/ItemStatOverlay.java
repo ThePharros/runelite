@@ -29,12 +29,17 @@ import com.google.inject.Inject;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.EquipmentInventorySlot;
 import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
+import net.runelite.api.ItemID;
 import net.runelite.api.MenuEntry;
+import net.runelite.api.Prayer;
+import net.runelite.api.Skill;
+import net.runelite.api.VarPlayer;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetID;
 import net.runelite.api.widgets.WidgetInfo;
@@ -48,6 +53,7 @@ import net.runelite.client.util.QuantityFormatter;
 import net.runelite.http.api.item.ItemEquipmentStats;
 import net.runelite.http.api.item.ItemStats;
 
+@Slf4j
 public class ItemStatOverlay extends Overlay
 {
 	// Unarmed attack speed is 4
@@ -72,10 +78,13 @@ public class ItemStatOverlay extends Overlay
 	@Inject
 	private ItemStatConfig config;
 
+	@Inject
+	private ItemStatPlugin plugin;
+
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (client.isMenuOpen() || (!config.relative() && !config.absolute() && !config.theoretical()))
+		if (client.isMenuOpen() || (!config.relative() && !config.absolute() && !config.theoretical() && !config.maxHit()))
 		{
 			return null;
 		}
@@ -95,11 +104,11 @@ public class ItemStatOverlay extends Overlay
 
 		if (widget == null
 			|| !(group == WidgetInfo.INVENTORY.getGroupId()
-				|| group == WidgetInfo.EQUIPMENT.getGroupId()
-				|| group == WidgetInfo.EQUIPMENT_INVENTORY_ITEMS_CONTAINER.getGroupId()
-				|| (config.showStatsInBank()
-					&& (group == WidgetInfo.BANK_ITEM_CONTAINER.getGroupId()
-						|| group == WidgetInfo.BANK_INVENTORY_ITEMS_CONTAINER.getGroupId()))))
+			|| group == WidgetInfo.EQUIPMENT.getGroupId()
+			|| group == WidgetInfo.EQUIPMENT_INVENTORY_ITEMS_CONTAINER.getGroupId()
+			|| (config.showStatsInBank()
+			&& (group == WidgetInfo.BANK_ITEM_CONTAINER.getGroupId()
+			|| group == WidgetInfo.BANK_INVENTORY_ITEMS_CONTAINER.getGroupId()))))
 		{
 			return null;
 		}
@@ -232,7 +241,21 @@ public class ItemStatOverlay extends Overlay
 			}
 			else if (!changeStr.isEmpty())
 			{
-				b.append(label).append(": ").append(changeStr).append("</br>");
+				if (label.equals("Max Hit"))
+				{
+					if (diffValue == -1.0)
+					{
+						b.append(label).append(": ").append(ColorUtil.wrapWithColorTag("SPELL", config.colorMaxHit())).append("</br>");
+					}
+					else
+					{
+						b.append(label).append(": ").append(ColorUtil.wrapWithColorTag(Integer.toString((int)diffValue), config.colorMaxHit())).append("</br>");
+					}
+				}
+				else
+				{
+					b.append(label).append(": ").append(changeStr).append("</br>");
+				}
 			}
 		}
 
@@ -276,6 +299,10 @@ public class ItemStatOverlay extends Overlay
 
 		if (subtracted.isEquipable() && e != null)
 		{
+			if (config.maxHit())
+			{
+				b.append(buildStatRow("Max Hit", 0.0, getMaxHit(s), false, false, false));
+			}
 			b.append(buildStatRow("Prayer", currentEquipment.getPrayer(), e.getPrayer(), false, false));
 			b.append(buildStatRow("Speed", currentEquipment.getAspeed(), e.getAspeed(), true, false));
 			b.append(buildStatRow("Melee Str", currentEquipment.getStr(), e.getStr(), false, false));
@@ -346,5 +373,166 @@ public class ItemStatOverlay extends Overlay
 		b.append("</br>");
 
 		return b.toString();
+	}
+
+	private double getMaxHit(ItemStats s)
+	{
+		final ItemContainer equippedItems = client.getItemContainer(InventoryID.EQUIPMENT);
+		final ItemEquipmentStats currentEquipment = s.getEquipment();
+
+		double effectiveStrength = 0.0;
+		double baseDamage = 0.0;
+
+		double prayerBonus = 1.0;
+		double otherBonus = 1.0;
+		double styleBonus = 0.0;
+		double strengthBonus = 0.0;
+		double rangedStrengthBonus = 0.0;
+		double specialBonus = 1.0;
+
+		double maxHit = 0.0;
+
+		if (equippedItems != null)
+		{
+			log.info("" + plugin.getAttackStyle());
+			switch (plugin.getAttackStyle().getCombatType())
+				{
+					case MELEE: //melee max hit
+						for (Item item : equippedItems.getItems())
+						{
+							final ItemStats itemStats = itemManager.getItemStats(item.getId(), false);
+							if (itemStats != null && (currentEquipment.getSlot() != itemStats.getEquipment().getSlot()))
+							{
+								strengthBonus += itemStats.getEquipment().getStr();
+							}
+						}
+						log.info("str bonus sum before: " + strengthBonus);
+						strengthBonus += currentEquipment.getStr();
+						log.info("str bonus sum after: " + strengthBonus);
+
+						switch (plugin.getAttackStyle())
+						{
+							case AGGRESSIVE: //aggressive
+								styleBonus = 3.0;
+								break;
+							case CONTROLLED: //controlled
+								styleBonus = 1.0;
+								break;
+						}
+
+						if (client.isPrayerActive(Prayer.BURST_OF_STRENGTH))
+						{
+							prayerBonus = 1.05;
+						}
+						else if (client.isPrayerActive(Prayer.SUPERHUMAN_STRENGTH))
+						{
+							prayerBonus = 1.1;
+						}
+						else if (client.isPrayerActive(Prayer.ULTIMATE_STRENGTH))
+						{
+							prayerBonus = 1.15;
+						}
+						else if (client.isPrayerActive(Prayer.CHIVALRY))
+						{
+							prayerBonus = 1.18;
+						}
+						else if (client.isPrayerActive(Prayer.PIETY))
+						{
+							prayerBonus = 1.23;
+						}
+
+						//void knight melee set
+						if ((equippedItems.contains(ItemID.VOID_KNIGHT_GLOVES) || equippedItems.contains(ItemID.VOID_KNIGHT_GLOVES_L)) &&
+							(equippedItems.contains(ItemID.VOID_KNIGHT_ROBE) || equippedItems.contains(ItemID.VOID_KNIGHT_ROBE_L) ||
+								equippedItems.contains(ItemID.ELITE_VOID_ROBE) || equippedItems.contains(ItemID.ELITE_VOID_ROBE_L)) &&
+							(equippedItems.contains(ItemID.VOID_KNIGHT_TOP) || equippedItems.contains(ItemID.VOID_KNIGHT_TOP_L) ||
+								equippedItems.contains(ItemID.ELITE_VOID_TOP) || equippedItems.contains(ItemID.ELITE_VOID_TOP_L)) &&
+							(equippedItems.contains(ItemID.VOID_MELEE_HELM) || equippedItems.contains(ItemID.VOID_MELEE_HELM_L)))
+						{
+							otherBonus = 1.1;
+						}
+
+						//inquisitor's set - otherBonus ONLY applies for crush style!!
+						/*
+						if (equippedItems != null &&
+							equippedItems.contains(ItemID.INQUISITORS_HAUBERK) &&
+							equippedItems.contains(ItemID.INQUISITORS_GREAT_HELM) &&
+							equippedItems.contains(ItemID.INQUISITORS_PLATESKIRT) &&
+						//get crush style here)
+						{
+							otherBonus = 1.025;
+						}
+						*/
+
+						effectiveStrength = Math.floor(client.getBoostedSkillLevel(Skill.STRENGTH) * prayerBonus * otherBonus + styleBonus);
+						baseDamage = 1.3 + (effectiveStrength / 10) + (strengthBonus / 80) + ((effectiveStrength * strengthBonus) / 640);
+						maxHit = baseDamage * specialBonus;
+						break;
+					case RANGED:
+						for (Item item : equippedItems.getItems())
+						{
+							final ItemStats itemStats = itemManager.getItemStats(item.getId(), false);
+							if (itemStats != null && currentEquipment.getSlot() != itemStats.getEquipment().getSlot())
+							{
+								rangedStrengthBonus += itemStats.getEquipment().getRstr();
+							}
+						}
+
+						rangedStrengthBonus += currentEquipment.getRstr();
+
+						if (plugin.getAttackStyle() == ItemStatAttackStyle.ACCURATE_RANGING)
+						{
+							styleBonus = 3.0;
+						}
+
+						if (client.isPrayerActive(Prayer.SHARP_EYE))
+						{
+							prayerBonus = 1.05;
+						}
+						else if (client.isPrayerActive(Prayer.HAWK_EYE))
+						{
+							prayerBonus = 1.1;
+						}
+						else if (client.isPrayerActive(Prayer.EAGLE_EYE))
+						{
+							prayerBonus = 1.15;
+						}
+						else if (client.isPrayerActive(Prayer.RIGOUR))
+						{
+							prayerBonus = 1.23;
+						}
+
+						//void ranger set
+						if ((equippedItems.contains(ItemID.VOID_KNIGHT_GLOVES) || equippedItems.contains(ItemID.VOID_KNIGHT_GLOVES_L)) &&
+							(equippedItems.contains(ItemID.VOID_KNIGHT_ROBE) || equippedItems.contains(ItemID.VOID_KNIGHT_ROBE_L)) &&
+							(equippedItems.contains(ItemID.VOID_KNIGHT_TOP) || equippedItems.contains(ItemID.VOID_KNIGHT_TOP_L)) &&
+							(equippedItems.contains(ItemID.VOID_RANGER_HELM) || equippedItems.contains(ItemID.VOID_RANGER_HELM_L)))
+						{
+							otherBonus = 1.1;
+						}
+
+						//void elite ranger set
+						if ((equippedItems.contains(ItemID.VOID_KNIGHT_GLOVES) || equippedItems.contains(ItemID.VOID_KNIGHT_GLOVES_L)) &&
+							(equippedItems.contains(ItemID.ELITE_VOID_ROBE) || equippedItems.contains(ItemID.ELITE_VOID_ROBE_L)) &&
+							(equippedItems.contains(ItemID.ELITE_VOID_TOP) || equippedItems.contains(ItemID.ELITE_VOID_TOP_L)) &&
+							(equippedItems.contains(ItemID.VOID_RANGER_HELM) || equippedItems.contains(ItemID.VOID_RANGER_HELM_L)))
+						{
+							otherBonus = 1.125;
+						}
+
+						effectiveStrength = Math.floor(client.getBoostedSkillLevel(Skill.RANGED) * prayerBonus * otherBonus + styleBonus);
+						baseDamage = 1.3 + (effectiveStrength/10) + (rangedStrengthBonus/80) + ((effectiveStrength*rangedStrengthBonus)/640);
+						maxHit = Math.floor(baseDamage);
+						break;
+					case MAGIC:
+						maxHit = -1.0;
+						break;
+					case NONE:
+						maxHit = 0.0;
+						break;
+			}
+		}
+		log.info("MAX HIT: " + maxHit);
+		return Math.floor(maxHit);
 	}
 }
