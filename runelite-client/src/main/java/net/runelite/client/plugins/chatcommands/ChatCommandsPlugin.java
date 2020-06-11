@@ -105,6 +105,14 @@ public class ChatCommandsPlugin extends Plugin
 	private static final Pattern ADVENTURE_LOG_COX_PB_PATTERN = Pattern.compile("Fastest (?:kill|run)(?: - \\(Team size: (?:[0-9]+ players|Solo)\\))?: ([0-9:]+)");
 	private static final Pattern ADVENTURE_LOG_BOSS_PB_PATTERN = Pattern.compile("[a-zA-Z]+(?: [a-zA-Z]+)*");
 	private static final Pattern ADVENTURE_LOG_PB_PATTERN = Pattern.compile("(" + ADVENTURE_LOG_BOSS_PB_PATTERN + "(?: - " + ADVENTURE_LOG_BOSS_PB_PATTERN + ")*) (?:" + ADVENTURE_LOG_COX_PB_PATTERN + "( )*)+");
+	private static final Pattern SEPULCHRE_PATTERN = Pattern.compile("You have completed Floor ([1-5]) of the Hallowed Sepulchre! Total completions: <col=ff0000>(\\d+)</col>.");
+	private static final Pattern SEPULCHRE_COFFIN_PATTERN = Pattern.compile("You have opened the Grand Hallowed Coffin <col=ff0000>(\\d+)</col> times!");
+	private static final Pattern SEPULCHRE_PB_PATTERN = Pattern.compile("Floor ([1-5]) time: <col=ff0000>[0-9:]+</col>. Personal best: ([0-9:]+)");
+	private static final Pattern SEPULCHRE_NEW_PB_PATTERN = Pattern.compile("Floor ([1-5]) time: <col=ff0000>([0-9:]+)</col> \\(new personal best\\)");
+	private static final Pattern SEPULCHRE_F5_OVERALL_PB_PATTERN = Pattern.compile("Floor 5 time: <col=ff0000>([0-9:]+)</col>. Personal best: ([0-9:]+)<br>Overall time: <col=ff0000>([0-9:]+)</col>. Personal best: ([0-9:]+)<br>");
+	private static final Pattern SEPULCHRE_F5_OVERALL_NEW_PB_PATTERN = Pattern.compile("");
+	private static final Pattern SEPULCHRE_F5_PB_OVERALL_PATTERN = Pattern.compile("");
+	private static final Pattern SEPULCHRE_F5_NEW_PB_OVERALL_PATTERN = Pattern.compile("");
 
 	private static final String TOTAL_LEVEL_COMMAND_STRING = "!total";
 	private static final String PRICE_COMMAND_STRING = "!price";
@@ -372,6 +380,34 @@ public class ChatCommandsPlugin extends Plugin
 			matchPb(matcher);
 		}
 
+		matcher = SEPULCHRE_PATTERN.matcher(message);
+		if (matcher.find())
+		{
+			int floorLevel = Integer.parseInt(matcher.group(1));
+			int kc = Integer.parseInt(matcher.group(2));
+			log.info("FLOOR_LEVEL: " + floorLevel + ", KC: " + kc);
+			setKc("Hallowed Sepulchre Floor " + floorLevel, kc);
+		}
+
+		matcher = SEPULCHRE_COFFIN_PATTERN.matcher(message);
+		if (matcher.find())
+		{
+			int kc = Integer.parseInt(matcher.group(1));
+			setKc("Grand Hallowed Coffins", kc);
+		}
+
+		matcher = SEPULCHRE_PB_PATTERN.matcher(message);
+		if (matcher.find())
+		{
+			matchPbSepulchre(matcher);
+		}
+
+		matcher = SEPULCHRE_NEW_PB_PATTERN.matcher(message);
+		if (matcher.find())
+		{
+			matchPbSepulchre(matcher);
+		}
+
 		lastBossKill = null;
 	}
 
@@ -405,6 +441,13 @@ public class ChatCommandsPlugin extends Plugin
 			// Some bosses send the pb message, and then the kill message!
 			lastPb = seconds;
 		}
+	}
+
+	private void matchPbSepulchre(Matcher matcher)
+	{
+		int floorLevel = Integer.parseInt(matcher.group(1));
+		int seconds = timeStringToSeconds(matcher.group(2));
+		setPb("Hallowed Sepulchre Floor " + floorLevel, seconds);
 	}
 
 	@Subscribe
@@ -1621,6 +1664,44 @@ public class ChatCommandsPlugin extends Plugin
 
 			case "the nightmare":
 				return "Nightmare";
+
+			// Hallowed Sepulchre
+			case "hs 1":
+			case "hallowed sepulchre 1":
+			case "hallowed sepulcher 1":
+			case "sepulchre 1":
+			case "sepulcher 1":
+				return "Hallowed Sepulchre Floor 1";
+			case "hs 2":
+			case "hallowed sepulchre 2":
+			case "hallowed sepulcher 2":
+			case "sepulchre 2":
+			case "sepulcher 2":
+				return "Hallowed Sepulchre Floor 2";
+			case "hs 3":
+			case "hallowed sepulchre 3":
+			case "hallowed sepulcher 3":
+			case "sepulchre 3":
+			case "sepulcher 3":
+				return "Hallowed Sepulchre Floor 3";
+			case "hs 4":
+			case "hallowed sepulchre 4":
+			case "hallowed sepulcher 4":
+			case "sepulchre 4":
+			case "sepulcher 4":
+				return "Hallowed Sepulchre Floor 4";
+			case "hs 5":
+			case "hallowed sepulchre 5":
+			case "hallowed sepulcher 5":
+			case "sepulchre 5":
+			case "sepulcher 5":
+				return "Hallowed Sepulchre Floor 5";
+			case "hs":
+			case "ghc":
+			case "coffin":
+				return "Grand Hallowed Coffins";
+			case "hs overall":
+				return "Hallowed Sepulchre Overall";
 
 			default:
 				return WordUtils.capitalize(boss);
