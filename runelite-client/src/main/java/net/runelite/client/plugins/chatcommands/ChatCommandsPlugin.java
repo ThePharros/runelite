@@ -881,26 +881,17 @@ public class ChatCommandsPlugin extends Plugin
 			//fill array with all sepulchre pbs, 'N/A' if not found
 			for (int i = 0; i < sepulchrePbs.length; i++)
 			{
-				try
+				if (i < 5)
 				{
-					if (i < 5)
-					{
-						int floorPb = chatClient.getPb(player, "hallowed sepulchre floor " + i + 1);
-						sepulchrePbs[i] = String.format("%d:%02d", floorPb / 60, floorPb % 60);
-					}
-					else
-					{
-						int overallPb = chatClient.getPb(player, "hallowed sepulchre overall");
-						sepulchrePbs[5] = String.format("%d:%02d", overallPb / 60, overallPb % 60);
-					}
+					int floorPb = getPb("hallowed sepulchre floor " + (i + 1));
+					sepulchrePbs[i] = (floorPb == 0) ? "N/A" : String.format("%d:%02d", floorPb / 60, floorPb % 60);
 				}
-				catch (IOException e)
+				else
 				{
-					log.debug("unable to lookup personal best", e);
-					sepulchrePbs[i] = "N/A";
+					int overallPb = getPb("hallowed sepulchre overall");
+					sepulchrePbs[5] = (overallPb == 0) ? "N/A" : String.format("%d:%02d", overallPb / 60, overallPb % 60);
 				}
 			}
-			//build output string of all sepulchre pbs
 
 			response = new ChatMessageBuilder()
 				.append(ChatColorType.HIGHLIGHT)
@@ -1798,10 +1789,14 @@ public class ChatCommandsPlugin extends Plugin
 			case "hs grand hallowed coffins":
 				return "Grand Hallowed Coffins";
 			case "hs overall":
+			case "hallowed sepulcher overall":
 				return "Hallowed Sepulchre Overall";
 			case "hs":
 			case "hs all":
 			case "hallowed sepulcher":
+			case "hallowed sepulcher all":
+			case "sepulcher":
+			case "sepulcher all":
 				return "Hallowed Sepulchre";
 
 			default:
