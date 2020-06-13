@@ -109,10 +109,10 @@ public class ChatCommandsPlugin extends Plugin
 	private static final Pattern SEPULCHRE_COFFIN_PATTERN = Pattern.compile("You have opened the Grand Hallowed Coffin <col=ff0000>(\\d+)</col> times!");
 	private static final Pattern SEPULCHRE_PB_PATTERN = Pattern.compile("Floor ([1-5]) time: <col=ff0000>[0-9:]+</col>. Personal best: ([0-9:]+)");
 	private static final Pattern SEPULCHRE_NEW_PB_PATTERN = Pattern.compile("Floor ([1-5]) time: <col=ff0000>([0-9:]+)</col> \\(new personal best\\)");
-	private static final Pattern SEPULCHRE_F5_OVERALL_PB_PATTERN = Pattern.compile("Floor 5 time: <col=ff0000>([0-9:]+)</col>. Personal best: ([0-9:]+)<br>Overall time: <col=ff0000>([0-9:]+)</col>. Personal best: ([0-9:]+)<br>");
-	private static final Pattern SEPULCHRE_F5_OVERALL_NEW_PB_PATTERN = Pattern.compile("");
-	private static final Pattern SEPULCHRE_F5_PB_OVERALL_PATTERN = Pattern.compile("");
-	private static final Pattern SEPULCHRE_F5_NEW_PB_OVERALL_PATTERN = Pattern.compile("");
+	private static final Pattern SEPULCHRE_F5_PB_OVERALL_PB_PATTERN = Pattern.compile("Floor 5 time: <col=ff0000>[0-9:]+</col>. Personal best: ([0-9:]+)<br>Overall time: <col=ff0000>[0-9:]+</col>. Personal best: ([0-9:]+)<br>");
+	private static final Pattern SEPULCHRE_F5_PB_OVERALL_NEW_PB_PATTERN = Pattern.compile("Floor 5 time: <col=ff0000>[0-9:]+</col>. Personal best: ([0-9:]+)<br>Overall time: <col=ff0000>([0-9:]+)</col> \\(new personal best\\)<br>");
+	private static final Pattern SEPULCHRE_F5_NEW_PB_OVERALL_PB_PATTERN = Pattern.compile("Floor 5 time: <col=ff0000>([0-9:]+)</col> \\(new personal best\\)<br>Overall time: <col=ff0000>[0-9:]+</col>. Personal best: ([0-9:]+)<br>");
+	private static final Pattern SEPULCHRE_F5_NEW_PB_OVERALL_NEW_PB_PATTERN = Pattern.compile("Floor 5 time: <col=ff0000>([0-9:]+)</col> \\(new personal best\\)<br>Overall time: <col=ff0000>([0-9:]+)</col> \\(new personal best\\)<br>");
 
 	private static final String TOTAL_LEVEL_COMMAND_STRING = "!total";
 	private static final String PRICE_COMMAND_STRING = "!price";
@@ -408,6 +408,30 @@ public class ChatCommandsPlugin extends Plugin
 			matchPbSepulchre(matcher);
 		}
 
+		matcher = SEPULCHRE_F5_PB_OVERALL_PB_PATTERN.matcher(message);
+		if (matcher.find())
+		{
+			matchPbSepulchreOverall(matcher);
+		}
+
+		matcher = SEPULCHRE_F5_NEW_PB_OVERALL_PB_PATTERN.matcher(message);
+		if (matcher.find())
+		{
+			matchPbSepulchreOverall(matcher);
+		}
+
+		matcher = SEPULCHRE_F5_PB_OVERALL_NEW_PB_PATTERN.matcher(message);
+		if (matcher.find())
+		{
+			matchPbSepulchreOverall(matcher);
+		}
+
+		matcher = SEPULCHRE_F5_NEW_PB_OVERALL_NEW_PB_PATTERN.matcher(message);
+		if (matcher.find())
+		{
+			matchPbSepulchreOverall(matcher);
+		}
+
 		lastBossKill = null;
 	}
 
@@ -448,6 +472,14 @@ public class ChatCommandsPlugin extends Plugin
 		int floorLevel = Integer.parseInt(matcher.group(1));
 		int seconds = timeStringToSeconds(matcher.group(2));
 		setPb("Hallowed Sepulchre Floor " + floorLevel, seconds);
+	}
+
+	private void matchPbSepulchreOverall(Matcher matcher)
+	{
+		int floorFiveSeconds = timeStringToSeconds(matcher.group(1));
+		int overallSeconds = timeStringToSeconds(matcher.group(2));
+		setPb("Hallowed Sepulchre Floor 5", floorFiveSeconds);
+		setPb("Hallowed Sepulchre Overall", overallSeconds);
 	}
 
 	@Subscribe
@@ -841,27 +873,90 @@ public class ChatCommandsPlugin extends Plugin
 		search = longBossName(search);
 
 		final int pb;
-		try
-		{
-			pb = chatClient.getPb(player, search);
-		}
-		catch (IOException ex)
-		{
-			log.debug("unable to lookup personal best", ex);
-			return;
-		}
+		String[] sepulchrePbs = new String[6];
+		String response;
 
-		int minutes = pb / 60;
-		int seconds = pb % 60;
+		if (search.toLowerCase().equals("hallowed sepulchre"))
+		{
+			//fill array with all sepulchre pbs, 'N/A' if not found
+			for (int i = 0; i < sepulchrePbs.length; i++)
+			{
+				try
+				{
+					if (i < 5)
+					{
+						int floorPb = chatClient.getPb(player, "hallowed sepulchre floor " + i + 1);
+						sepulchrePbs[i] = String.format("%d:%02d", floorPb / 60, floorPb % 60);
+					}
+					else
+					{
+						int overallPb = chatClient.getPb(player, "hallowed sepulchre overall");
+						sepulchrePbs[5] = String.format("%d:%02d", overallPb / 60, overallPb % 60);
+					}
+				}
+				catch (IOException e)
+				{
+					log.debug("unable to lookup personal best", e);
+					sepulchrePbs[i] = "N/A";
+				}
+			}
+			//build output string of all sepulchre pbs
 
-		String response = new ChatMessageBuilder()
-			.append(ChatColorType.HIGHLIGHT)
-			.append(search)
-			.append(ChatColorType.NORMAL)
-			.append(" personal best: ")
-			.append(ChatColorType.HIGHLIGHT)
-			.append(String.format("%d:%02d", minutes, seconds))
-			.build();
+			response = new ChatMessageBuilder()
+				.append(ChatColorType.HIGHLIGHT)
+				.append(search)
+				.append(ChatColorType.NORMAL)
+				.append(" personal bests: ")
+				.append(ChatColorType.NORMAL)
+				.append("F1: ")
+				.append(ChatColorType.HIGHLIGHT)
+				.append(sepulchrePbs[0])
+				.append(ChatColorType.NORMAL)
+				.append(", F2: ")
+				.append(ChatColorType.HIGHLIGHT)
+				.append(sepulchrePbs[1])
+				.append(ChatColorType.NORMAL)
+				.append(", F3: ")
+				.append(ChatColorType.HIGHLIGHT)
+				.append(sepulchrePbs[2])
+				.append(ChatColorType.NORMAL)
+				.append(", F4: ")
+				.append(ChatColorType.HIGHLIGHT)
+				.append(sepulchrePbs[3])
+				.append(ChatColorType.NORMAL)
+				.append(", F5: ")
+				.append(ChatColorType.HIGHLIGHT)
+				.append(sepulchrePbs[4])
+				.append(ChatColorType.NORMAL)
+				.append(", Overall: ")
+				.append(ChatColorType.HIGHLIGHT)
+				.append(sepulchrePbs[5])
+				.build();
+		}
+		else
+		{
+			try
+			{
+				pb = chatClient.getPb(player, search);
+			}
+			catch (IOException ex)
+			{
+				log.debug("unable to lookup personal best", ex);
+				return;
+			}
+
+			int minutes = pb / 60;
+			int seconds = pb % 60;
+
+			response = new ChatMessageBuilder()
+				.append(ChatColorType.HIGHLIGHT)
+				.append(search)
+				.append(ChatColorType.NORMAL)
+				.append(" personal best: ")
+				.append(ChatColorType.HIGHLIGHT)
+				.append(String.format("%d:%02d", minutes, seconds))
+				.build();
+		}
 
 		log.debug("Setting response {}", response);
 		final MessageNode messageNode = chatMessage.getMessageNode();
@@ -1696,12 +1791,18 @@ public class ChatCommandsPlugin extends Plugin
 			case "sepulchre 5":
 			case "sepulcher 5":
 				return "Hallowed Sepulchre Floor 5";
-			case "hs":
-			case "ghc":
-			case "coffin":
+			case "hs ghc":
+			case "hs coffin":
+			case "hs coffins":
+			case "hs grand hallowed coffin":
+			case "hs grand hallowed coffins":
 				return "Grand Hallowed Coffins";
 			case "hs overall":
 				return "Hallowed Sepulchre Overall";
+			case "hs":
+			case "hs all":
+			case "hallowed sepulcher":
+				return "Hallowed Sepulchre";
 
 			default:
 				return WordUtils.capitalize(boss);
