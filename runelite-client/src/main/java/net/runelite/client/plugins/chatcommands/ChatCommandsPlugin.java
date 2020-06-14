@@ -385,7 +385,6 @@ public class ChatCommandsPlugin extends Plugin
 		{
 			int floorLevel = Integer.parseInt(matcher.group(1));
 			int kc = Integer.parseInt(matcher.group(2));
-			log.info("FLOOR_LEVEL: " + floorLevel + ", KC: " + kc);
 			setKc("Hallowed Sepulchre Floor " + floorLevel, kc);
 		}
 
@@ -393,7 +392,7 @@ public class ChatCommandsPlugin extends Plugin
 		if (matcher.find())
 		{
 			int kc = Integer.parseInt(matcher.group(1));
-			setKc("Grand Hallowed Coffins", kc);
+			setKc("Hallowed Sepulchre", kc);
 		}
 
 		matcher = SEPULCHRE_PB_PATTERN.matcher(message);
@@ -479,7 +478,7 @@ public class ChatCommandsPlugin extends Plugin
 		int floorFiveSeconds = timeStringToSeconds(matcher.group(1));
 		int overallSeconds = timeStringToSeconds(matcher.group(2));
 		setPb("Hallowed Sepulchre Floor 5", floorFiveSeconds);
-		setPb("Hallowed Sepulchre Overall", overallSeconds);
+		setPb("Hallowed Sepulchre", overallSeconds);
 	}
 
 	@Subscribe
@@ -873,81 +872,27 @@ public class ChatCommandsPlugin extends Plugin
 		search = longBossName(search);
 
 		final int pb;
-		String[] sepulchrePbs = new String[6];
-		String response;
-
-		if (search.toLowerCase().equals("hallowed sepulchre"))
+		try
 		{
-			//fill array with all sepulchre pbs, 'N/A' if not found
-			for (int i = 0; i < sepulchrePbs.length; i++)
-			{
-				if (i < 5)
-				{
-					int floorPb = getPb("hallowed sepulchre floor " + (i + 1));
-					sepulchrePbs[i] = (floorPb == 0) ? "N/A" : String.format("%d:%02d", floorPb / 60, floorPb % 60);
-				}
-				else
-				{
-					int overallPb = getPb("hallowed sepulchre overall");
-					sepulchrePbs[5] = (overallPb == 0) ? "N/A" : String.format("%d:%02d", overallPb / 60, overallPb % 60);
-				}
-			}
-
-			response = new ChatMessageBuilder()
-				.append(ChatColorType.HIGHLIGHT)
-				.append(search)
-				.append(ChatColorType.NORMAL)
-				.append(" personal bests: ")
-				.append(ChatColorType.NORMAL)
-				.append("F1: ")
-				.append(ChatColorType.HIGHLIGHT)
-				.append(sepulchrePbs[0])
-				.append(ChatColorType.NORMAL)
-				.append(", F2: ")
-				.append(ChatColorType.HIGHLIGHT)
-				.append(sepulchrePbs[1])
-				.append(ChatColorType.NORMAL)
-				.append(", F3: ")
-				.append(ChatColorType.HIGHLIGHT)
-				.append(sepulchrePbs[2])
-				.append(ChatColorType.NORMAL)
-				.append(", F4: ")
-				.append(ChatColorType.HIGHLIGHT)
-				.append(sepulchrePbs[3])
-				.append(ChatColorType.NORMAL)
-				.append(", F5: ")
-				.append(ChatColorType.HIGHLIGHT)
-				.append(sepulchrePbs[4])
-				.append(ChatColorType.NORMAL)
-				.append(", Overall: ")
-				.append(ChatColorType.HIGHLIGHT)
-				.append(sepulchrePbs[5])
-				.build();
+			pb = chatClient.getPb(player, search);
 		}
-		else
+		catch (IOException ex)
 		{
-			try
-			{
-				pb = chatClient.getPb(player, search);
-			}
-			catch (IOException ex)
-			{
-				log.debug("unable to lookup personal best", ex);
-				return;
-			}
-
-			int minutes = pb / 60;
-			int seconds = pb % 60;
-
-			response = new ChatMessageBuilder()
-				.append(ChatColorType.HIGHLIGHT)
-				.append(search)
-				.append(ChatColorType.NORMAL)
-				.append(" personal best: ")
-				.append(ChatColorType.HIGHLIGHT)
-				.append(String.format("%d:%02d", minutes, seconds))
-				.build();
+			log.debug("unable to lookup personal best", ex);
+			return;
 		}
+
+		int minutes = pb / 60;
+		int seconds = pb % 60;
+
+		String response = new ChatMessageBuilder()
+			.append(ChatColorType.HIGHLIGHT)
+			.append(search)
+			.append(ChatColorType.NORMAL)
+			.append(" personal best: ")
+			.append(ChatColorType.HIGHLIGHT)
+			.append(String.format("%d:%02d", minutes, seconds))
+			.build();
 
 		log.debug("Setting response {}", response);
 		final MessageNode messageNode = chatMessage.getMessageNode();
@@ -1782,21 +1727,7 @@ public class ChatCommandsPlugin extends Plugin
 			case "sepulchre 5":
 			case "sepulcher 5":
 				return "Hallowed Sepulchre Floor 5";
-			case "hs ghc":
-			case "hs coffin":
-			case "hs coffins":
-			case "hs grand hallowed coffin":
-			case "hs grand hallowed coffins":
-				return "Grand Hallowed Coffins";
-			case "hs overall":
-			case "hallowed sepulcher overall":
-				return "Hallowed Sepulchre Overall";
 			case "hs":
-			case "hs all":
-			case "hallowed sepulcher":
-			case "hallowed sepulcher all":
-			case "sepulcher":
-			case "sepulcher all":
 				return "Hallowed Sepulchre";
 
 			default:

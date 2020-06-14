@@ -606,7 +606,7 @@ public class ChatCommandsPluginTest
 		ChatMessage chatMessageEvent = new ChatMessage(null, GAMEMESSAGE, "", "You have opened the Grand Hallowed Coffin <col=ff0000>12</col> times!", null, 0);
 		chatCommandsPlugin.onChatMessage(chatMessageEvent);
 
-		verify(configManager).setConfiguration("killcount.adam", "grand hallowed coffins", 12);
+		verify(configManager).setConfiguration("killcount.adam", "hallowed sepulchre", 12);
 	}
 
 	@Test
@@ -627,7 +627,6 @@ public class ChatCommandsPluginTest
 		verify(configManager).setConfiguration("personalbest.adam", "hallowed sepulchre floor 1", 42);
 	}
 
-	/*
 	@Test
 	public void testSepulchreF5PersonalBestOverallPersonalBest()
 	{
@@ -635,7 +634,7 @@ public class ChatCommandsPluginTest
 		chatCommandsPlugin.onChatMessage(chatMessageEvent);
 
 		verify(configManager).setConfiguration("personalbest.adam", "hallowed sepulchre floor 5", 4*60 + 58);
-		verify(configManager).setConfiguration("personalbest.adam", "hallowed sepulchre overall", 12*60 + 7);
+		verify(configManager).setConfiguration("personalbest.adam", "hallowed sepulchre", 12*60 + 7);
 	}
 
 	@Test
@@ -645,7 +644,7 @@ public class ChatCommandsPluginTest
 		chatCommandsPlugin.onChatMessage(chatMessageEvent);
 
 		verify(configManager).setConfiguration("personalbest.adam", "hallowed sepulchre floor 5", 4*60 + 30);
-		verify(configManager).setConfiguration("personalbest.adam", "hallowed sepulchre overall", 12*60 + 5);
+		verify(configManager).setConfiguration("personalbest.adam", "hallowed sepulchre", 12*60 + 5);
 	}
 
 	@Test
@@ -655,7 +654,7 @@ public class ChatCommandsPluginTest
 		chatCommandsPlugin.onChatMessage(chatMessageEvent);
 
 		verify(configManager).setConfiguration("personalbest.adam", "hallowed sepulchre floor 5", 3*60 + 26);
-		verify(configManager).setConfiguration("personalbest.adam", "hallowed sepulchre overall", 9*60 + 15);
+		verify(configManager).setConfiguration("personalbest.adam", "hallowed sepulchre", 9*60 + 15);
 	}
 
 	@Test
@@ -665,20 +664,7 @@ public class ChatCommandsPluginTest
 		chatCommandsPlugin.onChatMessage(chatMessageEvent);
 
 		verify(configManager).setConfiguration("personalbest.adam", "hallowed sepulchre floor 5", 4*60 + 12);
-		verify(configManager).setConfiguration("personalbest.adam", "hallowed sepulchre overall", 9*60 + 50);
+		verify(configManager).setConfiguration("personalbest.adam", "hallowed sepulchre", 9*60 + 50);
 	}
-
-	@Test
-	public void testSepulchreAllPersonalBest()
-	{
-
-	}
-
-	@Test
-	public void testSepulchreAllFloorsAndChest()
-	{
-
-	}
-	*/
 
 }
