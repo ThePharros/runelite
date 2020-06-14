@@ -65,6 +65,7 @@ import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -633,7 +634,7 @@ public class ChatCommandsPluginTest
 		ChatMessage chatMessageEvent = new ChatMessage(null, GAMEMESSAGE, "", "Floor 5 time: <col=ff0000>5:33</col>. Personal best: 4:58<br>Overall time: <col=ff0000>13:51</col>. Personal best: 12:07<br>", null, 0);
 		chatCommandsPlugin.onChatMessage(chatMessageEvent);
 
-		verify(configManager).setConfiguration("personalbest.adam", "hallowed sepulchre floor 5", 4*60 + 58);
+		verify(configManager, times(2)).setConfiguration("personalbest.adam", "hallowed sepulchre floor 5", 4*60 + 58);
 		verify(configManager).setConfiguration("personalbest.adam", "hallowed sepulchre", 12*60 + 7);
 	}
 
@@ -643,7 +644,7 @@ public class ChatCommandsPluginTest
 		ChatMessage chatMessageEvent = new ChatMessage(null, GAMEMESSAGE, "", "Floor 5 time: <col=ff0000>4:55</col>. Personal best: 4:30<br>Overall time: <col=ff0000>12:05</col> (new personal best)<br>", null, 0);
 		chatCommandsPlugin.onChatMessage(chatMessageEvent);
 
-		verify(configManager).setConfiguration("personalbest.adam", "hallowed sepulchre floor 5", 4*60 + 30);
+		verify(configManager, times(2)).setConfiguration("personalbest.adam", "hallowed sepulchre floor 5", 4*60 + 30);
 		verify(configManager).setConfiguration("personalbest.adam", "hallowed sepulchre", 12*60 + 5);
 	}
 
@@ -653,7 +654,7 @@ public class ChatCommandsPluginTest
 		ChatMessage chatMessageEvent = new ChatMessage(null, GAMEMESSAGE, "", "Floor 5 time: <col=ff0000>3:26</col> (new personal best)<br>Overall time: <col=ff0000>9:17</col>. Personal best: 9:15<br>", null, 0);
 		chatCommandsPlugin.onChatMessage(chatMessageEvent);
 
-		verify(configManager).setConfiguration("personalbest.adam", "hallowed sepulchre floor 5", 3*60 + 26);
+		verify(configManager, times(2)).setConfiguration("personalbest.adam", "hallowed sepulchre floor 5", 3*60 + 26);
 		verify(configManager).setConfiguration("personalbest.adam", "hallowed sepulchre", 9*60 + 15);
 	}
 
@@ -663,7 +664,7 @@ public class ChatCommandsPluginTest
 		ChatMessage chatMessageEvent = new ChatMessage(null, GAMEMESSAGE, "", "Floor 5 time: <col=ff0000>4:12</col> (new personal best)<br>Overall time: <col=ff0000>9:50</col> (new personal best)<br>", null, 0);
 		chatCommandsPlugin.onChatMessage(chatMessageEvent);
 
-		verify(configManager).setConfiguration("personalbest.adam", "hallowed sepulchre floor 5", 4*60 + 12);
+		verify(configManager, times(2)).setConfiguration("personalbest.adam", "hallowed sepulchre floor 5", 4*60 + 12);
 		verify(configManager).setConfiguration("personalbest.adam", "hallowed sepulchre", 9*60 + 50);
 	}
 
