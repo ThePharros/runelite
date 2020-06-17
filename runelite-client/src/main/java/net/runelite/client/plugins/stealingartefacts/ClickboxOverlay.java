@@ -55,7 +55,7 @@ class ClickboxOverlay extends Overlay
 	{
 		StealingArtefactState state = plugin.getStealingArtefactState();
 
-		if (state == null || !plugin.isInHouseRegion())
+		if (state == null || !plugin.isInPortPiscariliusRegion())
 		{
 			return null;
 		}
