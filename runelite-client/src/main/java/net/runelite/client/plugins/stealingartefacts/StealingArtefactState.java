@@ -42,7 +42,7 @@ enum StealingArtefactState
 	LOCATION_SOUTH("South House", Color.YELLOW, new WorldPoint(1764, 3735, 1), new WorldPoint(1768, 3733, 0)),
 	LOCATION_SOUTHWEST("Southwest House", Color.YELLOW, new WorldPoint(1750, 3735, 1), new WorldPoint(1749, 3730, 0)),
 	LOCATION_WEST("West House", Color.YELLOW, new WorldPoint(1747, 3749, 1), new WorldPoint(1751, 3751, 0)),
-	LOCATION_NORTHWEST("Northwest House", Color.YELLOW, new WorldPoint(1750, 3763, 1), new WorldPoint(1750, 3756, 0)),
+	LOCATION_NORTHWEST("Northwest House", Color.YELLOW, new WorldPoint(1751, 3763, 1), new WorldPoint(1750, 3756, 0)),
 	FAILURE("Failure", Color.RED, new WorldPoint(0, 0, 0), new WorldPoint(0, 0, 0)),
 	DELIVER_ARTEFACT("Deliver Artefact", Color.GREEN, new WorldPoint(0, 0, 0), new WorldPoint(0, 0, 0));
 
