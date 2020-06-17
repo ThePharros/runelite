@@ -104,6 +104,9 @@ public class StealingArtefactsPlugin extends Plugin
 	private boolean inPortPiscariliusRegion;
 
 	@Getter(AccessLevel.PACKAGE)
+	private boolean inHouseRegion;
+
+	@Getter(AccessLevel.PACKAGE)
 	private TileObject objectToHighlight;
 
 	private NPC captainKhaled;
@@ -187,7 +190,16 @@ public class StealingArtefactsPlugin extends Plugin
 			return;
 		}
 
-		final boolean newInPortPiscariliusRegion = PORT_PISCARILIUS_REGIONS.contains(player.getWorldLocation().getRegionID());
+		int regionID = player.getWorldLocation().getRegionID();
+		if (regionID == 6970)
+		{
+			inHouseRegion = true;
+		}
+		else
+		{
+			inHouseRegion = false;
+		}
+		final boolean newInPortPiscariliusRegion = PORT_PISCARILIUS_REGIONS.contains(regionID);
 
 		if (inPortPiscariliusRegion != newInPortPiscariliusRegion)
 		{
