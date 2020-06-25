@@ -30,42 +30,34 @@ import java.awt.Graphics2D;
 import java.awt.Shape;
 import javax.inject.Inject;
 
-import net.runelite.api.Client;
 import net.runelite.api.TileObject;
-import net.runelite.api.coords.LocalPoint;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 
 class ClickboxOverlay extends Overlay
 {
-	//the max click distance is approximately 22 tiles
-	private static final int MAX_DISTANCE = 22 * 128;
-
 	private final StealingArtefactsPlugin plugin;
-	private final Client client;
 
 	@Inject
-	private ClickboxOverlay(Client client, StealingArtefactsPlugin plugin)
+	private ClickboxOverlay(StealingArtefactsPlugin plugin)
 	{
 		super(plugin);
 		setPosition(OverlayPosition.DYNAMIC);
 		setLayer(OverlayLayer.ABOVE_SCENE);
-		this.client = client;
 		this.plugin = plugin;
 	}
 
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		LocalPoint playerLocation = client.getLocalPlayer().getLocalLocation();
 		StealingArtefactState state = plugin.getStealingArtefactState();
 		if (state == null || !plugin.isInPortPiscariliusRegion())
 		{
 			return null;
 		}
 		TileObject object = plugin.getObjectToHighlight();
-		if (object != null && object.getLocalLocation().distanceTo(playerLocation) <= MAX_DISTANCE)
+		if (object != null)
 		{
 			drawObjectLocation(graphics, plugin.getObjectToHighlight(), Color.CYAN);
 		}

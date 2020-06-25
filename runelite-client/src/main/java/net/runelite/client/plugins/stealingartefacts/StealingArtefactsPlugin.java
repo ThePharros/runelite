@@ -31,9 +31,11 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import net.runelite.api.Client;
 import net.runelite.api.TileObject;
+import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.NpcSpawned;
 import net.runelite.api.events.NpcDespawned;
@@ -81,6 +83,8 @@ public class StealingArtefactsPlugin extends Plugin
 		DRAWERS_27775,
 		DRAWERS_27776
 	);
+	//the max click distance is approximately 22 tiles. Agil overlay does 2350
+	private static final int MAX_DISTANCE = 22 * 128;
 
 	@Inject
 	private Client client;
@@ -131,6 +135,16 @@ public class StealingArtefactsPlugin extends Plugin
 		relevantObjects.clear();
 		overlayManager.remove(overlay);
 		overlayManager.remove(overlayClickbox);
+	}
+
+	@Subscribe
+	public void onGameStateChanged(GameStateChanged event)
+	{
+		if (event.getGameState() == GameState.LOADING)
+		{
+			relevantObjects.clear();
+			objectToHighlight = null;
+		}
 	}
 
 	@Subscribe
@@ -227,7 +241,8 @@ public class StealingArtefactsPlugin extends Plugin
 			client.setHintArrow(captainKhaled);
 			objectToHighlight = null;
 		}
-		else if (state == StealingArtefactState.NO_TASK || state == StealingArtefactState.FAILURE)
+		else if (state == StealingArtefactState.NO_TASK || state == StealingArtefactState.FAILURE
+			|| state == StealingArtefactState.DELIVER_ARTEFACT)
 		{
 			client.clearHintArrow();
 			objectToHighlight = null;
@@ -235,7 +250,25 @@ public class StealingArtefactsPlugin extends Plugin
 		else
 		{
 			client.setHintArrow(stealingArtefactState.getLadderPoint());
-			objectToHighlight = relevantObjects.get(stealingArtefactState.getLadderPoint());
+
+			TileObject object = relevantObjects.get(stealingArtefactState.getLadderPoint());
+			if (object != null)
+			{
+				LocalPoint objectLoc = object.getLocalLocation();
+				LocalPoint playerLoc = client.getLocalPlayer().getLocalLocation();
+				if (objectLoc.distanceTo(playerLoc) <= MAX_DISTANCE)
+				{
+					objectToHighlight = object;
+				}
+				else
+				{
+					objectToHighlight = null;
+				}
+			}
+			else
+			{
+				objectToHighlight = null;
+			}
 		}
 	}
 
@@ -245,7 +278,7 @@ public class StealingArtefactsPlugin extends Plugin
 		if (oldObject != null)
 		{
 			WorldPoint oldLocation = oldObject.getWorldLocation();
-			if (relevantObjects.containsKey(oldLocation))
+			if (objectToHighlight != null && objectToHighlight.getWorldLocation().equals(oldLocation))
 			{
 				objectToHighlight = null;
 			}
