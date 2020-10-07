@@ -31,6 +31,7 @@ import java.awt.Dimension;
 import java.awt.GridLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.OverlayLayout;
 import javax.swing.border.EmptyBorder;
 import lombok.Getter;
 import net.runelite.api.Constants;
@@ -45,6 +46,7 @@ public class TimeablePanel<T> extends JPanel
 	private final T timeable;
 	private final JLabel icon = new JLabel();
 	private final JLabel farmingContractIcon = new JLabel();
+	private final JLabel protectedIcon = new JLabel();
 	private final JLabel estimate = new JLabel();
 	private final ThinProgressBar progress = new ThinProgressBar();
 	private final JLabel text;
@@ -63,11 +65,18 @@ public class TimeablePanel<T> extends JPanel
 
 		icon.setMinimumSize(new Dimension(Constants.ITEM_SPRITE_WIDTH, Constants.ITEM_SPRITE_HEIGHT));
 		farmingContractIcon.setMinimumSize(new Dimension(Constants.ITEM_SPRITE_WIDTH, Constants.ITEM_SPRITE_HEIGHT));
+		protectedIcon.setMinimumSize(new Dimension(Constants.ITEM_SPRITE_WIDTH, Constants.ITEM_SPRITE_HEIGHT));
 
 		JPanel infoPanel = new JPanel();
 		infoPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		infoPanel.setLayout(new GridLayout(2, 1));
 		infoPanel.setBorder(new EmptyBorder(4, 4, 4, 0));
+
+		JPanel iconPanel = new JPanel();
+		iconPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		iconPanel.setLayout(new OverlayLayout(iconPanel));
+		iconPanel.add(protectedIcon, 0);
+		iconPanel.add(icon, 1);
 
 		text = new JShadowedLabel(title);
 		text.setFont(FontManager.getRunescapeSmallFont());
@@ -79,7 +88,7 @@ public class TimeablePanel<T> extends JPanel
 		infoPanel.add(text);
 		infoPanel.add(estimate);
 
-		topContainer.add(icon, BorderLayout.WEST);
+		topContainer.add(iconPanel, BorderLayout.WEST);
 		topContainer.add(farmingContractIcon, BorderLayout.EAST);
 		topContainer.add(infoPanel, BorderLayout.CENTER);
 

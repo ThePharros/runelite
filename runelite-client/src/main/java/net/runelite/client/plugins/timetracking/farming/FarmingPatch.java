@@ -28,6 +28,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import net.runelite.api.NpcID;
 import net.runelite.api.Varbits;
 
 @RequiredArgsConstructor(
@@ -41,4 +42,5 @@ class FarmingPatch
 	private final String name;
 	private final Varbits varbit;
 	private final PatchImplementation implementation;
+	//private final int gardenerID;
 }

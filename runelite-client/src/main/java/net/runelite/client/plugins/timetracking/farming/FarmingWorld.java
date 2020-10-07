@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import lombok.Getter;
+import net.runelite.api.NpcID;
 import net.runelite.api.Varbits;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.plugins.timetracking.Tab;

@@ -33,10 +33,13 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
+import net.runelite.api.MenuAction;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameTick;
@@ -60,15 +63,20 @@ import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
 import net.runelite.client.util.ImageUtil;
+import net.runelite.client.util.Text;
 
 @PluginDescriptor(
 	name = "Time Tracking",
 	description = "Enable the Time Tracking panel, which contains timers, stopwatches, and farming and bird house trackers",
 	tags = {"birdhouse", "farming", "hunter", "notifications", "skilling", "stopwatches", "timers", "panel"}
 )
+@Slf4j
 public class TimeTrackingPlugin extends Plugin
 {
 	private static final String CONTRACT_COMPLETED = "You've completed a Farming Guild Contract. You should return to Guildmaster Jane.";
+	private static final String COMPOST_REGEX = "You treat the [A-Za-z ]+ with (?:super|ultra)?compost.";
+	private static final String FERTILE_SOIL_REGEX = "The [A-za-z ]+ has been treated with (?:super|ultra)?compost(?: consuming 2 of your volcanic ash)?.";
+	private static final String PAYMENT_REGEX = "You pay the gardener[\\w ]* to protect the [A-Za-z ]*.";
 
 	@Inject
 	private ClientToolbar clientToolbar;
@@ -213,6 +221,14 @@ public class TimeTrackingPlugin extends Plugin
 		{
 			panel.update();
 		}
+
+		Widget npcDialog = client.getWidget(WidgetInfo.DIALOG_NPC_HEAD_MODEL);
+
+		if (npcDialog != null)
+		{
+			String dialogText = client.getWidget(WidgetInfo.DIALOG_NPC_TEXT).getText();
+			log.info(dialogText);
+		}
 	}
 
 	@Subscribe
@@ -227,12 +243,34 @@ public class TimeTrackingPlugin extends Plugin
 	@Subscribe
 	public void onChatMessage(ChatMessage event)
 	{
-		if (event.getType() != ChatMessageType.GAMEMESSAGE || !event.getMessage().equals(CONTRACT_COMPLETED))
+
+		if (event.getType() != ChatMessageType.GAMEMESSAGE && event.getType() != ChatMessageType.SPAM)
 		{
 			return;
 		}
 
-		farmingContractManager.setContract(null);
+		String message = event.getMessage();
+
+		if (message.equals(CONTRACT_COMPLETED))
+		{
+			farmingContractManager.setContract(null);
+		}
+
+		if (message.matches(COMPOST_REGEX))
+		{
+
+		}
+
+		if (message.matches(FERTILE_SOIL_REGEX))
+		{
+
+		}
+
+		if (message.matches(PAYMENT_REGEX))
+		{
+
+		}
+
 	}
 
 	@Schedule(period = 10, unit = ChronoUnit.SECONDS)

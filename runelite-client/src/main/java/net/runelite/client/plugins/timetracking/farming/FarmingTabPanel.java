@@ -32,10 +32,13 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.border.EmptyBorder;
 import net.runelite.api.ItemID;
+import net.runelite.api.Skill;
 import net.runelite.client.game.ItemManager;
+import net.runelite.client.game.SkillIconManager;
 import net.runelite.client.plugins.timetracking.TabContentPanel;
 import net.runelite.client.plugins.timetracking.TimeTrackingConfig;
 import net.runelite.client.plugins.timetracking.TimeablePanel;
@@ -49,13 +52,15 @@ public class FarmingTabPanel extends TabContentPanel
 	private final TimeTrackingConfig config;
 	private final List<TimeablePanel<FarmingPatch>> patchPanels;
 	private final FarmingContractManager farmingContractManager;
+	private final SkillIconManager iconManager;
 
 	FarmingTabPanel(
 		FarmingTracker farmingTracker,
 		ItemManager itemManager,
 		TimeTrackingConfig config,
 		Set<FarmingPatch> patches,
-		FarmingContractManager farmingContractManager
+		FarmingContractManager farmingContractManager,
+		SkillIconManager iconManager
 	)
 	{
 		this.farmingTracker = farmingTracker;
@@ -63,6 +68,7 @@ public class FarmingTabPanel extends TabContentPanel
 		this.config = config;
 		this.patchPanels = new ArrayList<>();
 		this.farmingContractManager = farmingContractManager;
+		this.iconManager = iconManager;
 
 		setLayout(new GridBagLayout());
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -152,6 +158,9 @@ public class FarmingTabPanel extends TabContentPanel
 				}
 				else
 				{
+					JLabel protectedIcon = panel.getProtectedIcon();
+
+					protectedIcon.setIcon(new ImageIcon(iconManager.getSkillImage(Skill.DEFENCE, true)));
 					itemManager.getImage(prediction.getProduce().getItemID()).addTo(panel.getIcon());
 					panel.getIcon().setToolTipText(prediction.getProduce().getName());
 				}

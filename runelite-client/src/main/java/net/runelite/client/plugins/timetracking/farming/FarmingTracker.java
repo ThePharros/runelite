@@ -37,6 +37,7 @@ import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.vars.Autoweed;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.game.ItemManager;
+import net.runelite.client.game.SkillIconManager;
 import net.runelite.client.plugins.timetracking.SummaryState;
 import net.runelite.client.plugins.timetracking.Tab;
 import net.runelite.client.plugins.timetracking.TimeTrackingConfig;
@@ -49,6 +50,7 @@ public class FarmingTracker
 	private final ConfigManager configManager;
 	private final TimeTrackingConfig config;
 	private final FarmingWorld farmingWorld;
+	private final SkillIconManager iconManager;
 
 	private final Map<Tab, SummaryState> summaries = new EnumMap<>(Tab.class);
 
@@ -60,19 +62,20 @@ public class FarmingTracker
 
 	@Inject
 	private FarmingTracker(Client client, ItemManager itemManager, ConfigManager configManager,
-		TimeTrackingConfig config, FarmingWorld farmingWorld)
+		TimeTrackingConfig config, FarmingWorld farmingWorld, SkillIconManager iconManager)
 	{
 		this.client = client;
 		this.itemManager = itemManager;
 		this.configManager = configManager;
 		this.config = config;
 		this.farmingWorld = farmingWorld;
+		this.iconManager = iconManager;
 	}
 
 
 	public FarmingTabPanel createTabPanel(Tab tab, FarmingContractManager farmingContractManager)
 	{
-		return new FarmingTabPanel(this, itemManager, config, farmingWorld.getTabs().get(tab), farmingContractManager);
+		return new FarmingTabPanel(this, itemManager, config, farmingWorld.getTabs().get(tab), farmingContractManager, iconManager);
 	}
 
 	/**
